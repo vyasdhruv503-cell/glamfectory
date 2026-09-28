@@ -34,22 +34,28 @@ export const { handlers, signIn, signOut, auth } = NextAuth({
         password: { label: 'Password', type: 'password' },
       },
       authorize: async (credentials) => {
-        const validated = loginSchema.safeParse(credentials)
-        if (!validated.success) return null
-        const { email, password } = validated.data
-        const user = await prisma.user.findUnique({
-          where: { email },
-          include: { stylist: true },
-        })
-        if (!user || !user.passwordHash || !user.isVerified) return null
-        const isValid = await compare(password, user.passwordHash)
-        if (!isValid) return null
-        return {
-          id: user.id,
-          email: user.email,
-          name: user.name,
-          role: user.role,
-          image: user.avatarUrl,
+        try {
+          const validated = loginSchema.safeParse(credentials)
+          if (!validated.success) return null
+          const email = validated.data.email.trim().toLowerCase()
+          const { password } = validated.data
+          const user = await prisma.user.findUnique({
+            where: { email },
+            include: { stylist: true },
+          })
+          if (!user || !user.passwordHash) return null
+          const isValid = await compare(password, user.passwordHash)
+          if (!isValid) return null
+          return {
+            id: user.id,
+            email: user.email,
+            name: user.name,
+            role: user.role,
+            image: user.avatarUrl,
+          }
+        } catch (error) {
+          console.error('Authorize error:', error)
+          return null
         }
       },
     }),
