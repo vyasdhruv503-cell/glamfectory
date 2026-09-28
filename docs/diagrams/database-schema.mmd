@@ -1,0 +1,108 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+erDiagram
+    USER ||--o| CUSTOMER : "1:1"
+    USER ||--o| STAFF : "1:1"
+    USER ||--o{ APPOINTMENT : "1:N"
+    USER ||--o{ PAYMENT : "1:N"
+    USER ||--o| WALLET : "1:1"
+    USER ||--o{ LOYALTY_TXN : "1:N"
+    USER ||--o{ MEMBERSHIP : "1:N"
+    USER ||--o{ REFERRAL : "referrer N"
+    USER ||--o{ REFERRAL : "referee 1"
+    USER ||--o| REFERRAL_CODE : "1:1"
+    USER ||--o{ NOTIFICATION : "1:N"
+    
+    STAFF ||--o{ APPOINTMENT : "1:N"
+    STAFF ||--o{ REVIEW : "1:N"
+    STAFF ||--o{ STYLIST_SERVICE : "1:N"
+    
+    CUSTOMER ||--o{ APPOINTMENT : "1:N"
+    CUSTOMER ||--o{ PAYMENT : "1:N"
+    CUSTOMER ||--o| WALLET : "1:1"
+    CUSTOMER ||--o{ LOYALTY_TXN : "1:N"
+    CUSTOMER ||--o{ MEMBERSHIP : "1:N"
+    CUSTOMER ||--o{ REVIEW : "1:N"
+    
+    SERVICE ||--o{ APPOINTMENT : "1:N"
+    SERVICE ||--o{ SERVICE_ADDON : "1:N"
+    SERVICE ||--o{ STYLIST_SERVICE : "1:N"
+    SERVICE ||--o{ OFFER_SERVICE : "1:N"
+    SERVICE }|--|| CATEGORY : "N:1"
+    
+    APPOINTMENT ||--o{ BOOKING_SERVICE : "1:N"
+    APPOINTMENT ||--o{ BOOKING_ADDON : "1:N"
+    APPOINTMENT ||--|| PAYMENT : "1:1"
+    APPOINTMENT ||--o| REVIEW : "1:1"
+    
+    PAYMENT }|--|| APPOINTMENT : "1:1"
+    PAYMENT }|--|| USER : "1:N"
+    
+    WALLET ||--o{ WALLET_TXN : "1:N"
+    WALLET }|--|| USER : "1:1"
+    
+    LOYALTY_TXN }|--|| USER : "1:N"
+    
+    MEMBERSHIP }|--|| USER : "1:N"
+    MEMBERSHIP }|--|| MEMBERSHIP_PLAN : "N:1"
+    MEMBERSHIP ||--o{ MEMBERSHIP_PAYMENT : "1:N"
+    
+    REFERRAL_PROGRAM ||--o{ REFERRAL : "1:N"
+    REFERRAL }|--|| USER : "referrer"
+    REFERRAL }|--|| USER : "referee"
+    
+    CATEGORY ||--o{ SERVICE : "1:N"
+    OFFER ||--o{ OFFER_SERVICE : "1:N"
+    REVIEW }|--|| APPOINTMENT : "1:1"
+    REVIEW }|--|| STAFF : "N:1"
+    
+    GALLERY {
+        string id PK
+        string title
+        string mediaUrl
+        enum mediaType
+        string category
+        boolean isActive
+    }
+    
+    USER {
+        string id PK
+        string email UK
+        string passwordHash
+        string name
+        string phone
+        string avatarUrl
+        enum role
+        boolean isVerified
+        datetime createdAt
+    }
+    
+    CUSTOMER {
+        string id PK
+        string userId FK
+        string name
+        string phone
+        string email
+        enum segment
+        string referralCode UK
+        int totalVisits
+        decimal totalSpent
+    }
+    
+    APPOINTMENT {
+        string id PK
+        string userId FK
+        string staffId FK
+        datetime scheduledAt
+        enum status
+        decimal totalAmount
+        enum paymentStatus
+    }
+    
+    PAYMENT {
+        string id PK
+        string appointmentId UK
+        string userId FK
+        decimal amount
+        enum method
+        enum status
+    }

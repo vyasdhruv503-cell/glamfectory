@@ -1,0 +1,31 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E', 'fontFamily': 'Nunito, sans-serif'}}}%%
+graph TB
+    subgraph "Client (Browser)"
+        A[User] --> B[Next.js App]
+        B --> C[Public Pages]
+        B --> D[Customer Account]
+        B --> E[Admin Panel]
+        B --> F[Auth Pages]
+    end
+    
+    subgraph "Next.js Server"
+        G[Middleware] --> H[App Router]
+        H --> I[API Routes]
+        I --> J[Prisma ORM]
+    end
+    
+    subgraph "Database"
+        J --> K[(Neon PostgreSQL)]
+    end
+    
+    subgraph "External Services"
+        I --> L[Razorpay]
+        I --> M[WhatsApp API]
+        I --> N[Email/SMS]
+    end
+    
+    style A fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style K fill:#e3f2fd,stroke:#1976D2,stroke-width:2px
+    style L fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style M fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style N fill:#fff3e0,stroke:#FF9800,stroke-width:2px

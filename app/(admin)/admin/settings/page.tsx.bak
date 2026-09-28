@@ -1,0 +1,457 @@
+'use client'
+
+import { useState } from 'react'
+import { Button } from '@/components/ui/button'
+import { Input } from '@/components/ui/input'
+import { Textarea } from '@/components/ui/textarea'
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from '@/components/ui/select'
+import { Switch } from '@/components/ui/switch'
+import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs'
+import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card'
+import { Form, FormControl, FormField, FormItem, FormLabel, FormMessage } from '@/components/ui/form'
+import { Save, Loader2, Building2, MapPin, Phone, Mail, Clock, Bell, Shield, DollarSign, Image, Users, Sparkles, Camera, Save as SaveIcon, Globe, Wifi, Palette, Key, Trash2 } from 'lucide-react'
+import { cn, formatCurrency } from '@/lib/utils'
+import { useForm } from 'react-hook-form'
+import { zodResolver } from '@hookform/resolvers/zod'
+import { z } from 'zod'
+import { toast } from 'react-hot-toast'
+
+const salonSchema = z.object({
+  name: z.string().min(2),
+  email: z.string().email(),
+  phone: z.string().min(10),
+  address: z.string().optional(),
+  city: z.string().optional(),
+  state: z.string().optional(),
+  pincode: z.string().optional(),
+  gstNumber: z.string().optional(),
+  timezone: z.string().default('Asia/Kolkata'),
+  currency: z.string().default('INR'),
+})
+
+const openingHoursSchema = z.object({
+  monday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  tuesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  wednesday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  thursday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  friday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  saturday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+  sunday: z.object({ open: z.string(), close: z.string(), closed: z.boolean() }),
+})
+
+const notificationSchema = z.object({
+  emailNotifications: z.boolean(),
+  whatsappNotifications: z.boolean(),
+  smsNotifications: z.boolean(),
+  pushNotifications: z.boolean(),
+  appointmentReminders: z.boolean(),
+  marketingEmails: z.boolean(),
+  promotionalSms: z.boolean(),
+})
+
+const initialSalonData = {
+  name: 'The Glam Factory',
+  email: 'info@theglamfactory.in',
+  phone: '+91 98765 43210',
+  address: '2nd Floor, Crystal Mall, Race Course Road',
+  city: 'Vadodara',
+  state: 'Gujarat',
+  pincode: '390007',
+  gstNumber: '24AAAAA0000A1Z5',
+  timezone: 'Asia/Kolkata',
+  currency: 'INR',
+}
+
+const initialOpeningHours = {
+  monday: { open: '10:00', close: '20:00', closed: false },
+  tuesday: { open: '10:00', close: '20:00', closed: false },
+  wednesday: { open: '10:00', close: '20:00', closed: false },
+  thursday: { open: '10:00', close: '20:00', closed: false },
+  friday: { open: '10:00', close: '20:00', closed: false },
+  saturday: { open: '10:00', close: '20:00', closed: false },
+  sunday: { open: '11:00', close: '18:00', closed: false },
+}
+
+const initialNotifications = {
+  emailNotifications: true,
+  whatsappNotifications: true,
+  smsNotifications: true,
+  pushNotifications: true,
+  appointmentReminders: true,
+  marketingEmails: true,
+  promotionalSms: false,
+}
+
+const days = ['monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday'] as const
+
+export default function AdminSettingsPage() {
+  const [activeTab, setActiveTab] = useState<'profile' | 'hours' | 'notifications' | 'appearance' | 'integrations' | 'security'>('profile')
+  const [isSaving, setIsSaving] = useState(false)
+
+  const salonForm = useForm({
+    resolver: zodResolver(salonSchema),
+    defaultValues: initialSalonData,
+  })
+
+  const hoursForm = useForm({
+    resolver: zodResolver(openingHoursSchema),
+    defaultValues: initialOpeningHours,
+  })
+
+  const notificationsForm = useForm({
+    resolver: zodResolver(notificationSchema),
+    defaultValues: initialNotifications,
+  })
+
+  const handleSave = async (form: any, endpoint: string) => {
+    setIsSaving(true)
+    await new Promise(resolve => setTimeout(resolve, 1000))
+    toast.success('Settings saved successfully!')
+    setIsSaving(false)
+  }
+
+  return (
+    <div className="space-y-8">
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="font-heading font-bold text-3xl sm:text-4xl text-foreground">
+            Settings <span className="text-primary">Panel</span>
+          </h1>
+          <p className="text-muted-foreground mt-1">Configure your salon settings and preferences</p>
+        </div>
+      </div>
+
+      <Tabs value={activeTab} onValueChange={(v) => setActiveTab(v as 'profile' | 'hours' | 'notifications' | 'appearance' | 'integrations' | 'security')} className="space-y-6">
+        <TabsList className="grid w-full grid-cols-6">
+          <TabsTrigger value="profile"><Building2 className="mr-2 h-4 w-4" />Profile</TabsTrigger>
+          <TabsTrigger value="hours"><Clock className="mr-2 h-4 w-4" />Hours</TabsTrigger>
+          <TabsTrigger value="notifications"><Bell className="mr-2 h-4 w-4" />Notifications</TabsTrigger>
+          <TabsTrigger value="appearance"><Palette className="mr-2 h-4 w-4" />Appearance</TabsTrigger>
+          <TabsTrigger value="integrations"><Wifi className="mr-2 h-4 w-4" />Integrations</TabsTrigger>
+          <TabsTrigger value="security"><Shield className="mr-2 h-4 w-4" />Security</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="profile">
+          <Form {...salonForm}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(salonForm, '/api/settings/profile') }} className="space-y-6 max-w-2xl">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Building2 className="h-5 w-5" />Salon Profile</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={salonForm.control} name="name" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Salon Name</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={salonForm.control} name="email" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Email</FormLabel>
+                        <FormControl><Input type="email" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={salonForm.control} name="phone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Phone</FormLabel>
+                        <FormControl><Input type="tel" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={salonForm.control} name="gstNumber" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>GST Number</FormLabel>
+                        <FormControl><Input placeholder="24AAAAA0000A1Z5" {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <FormField control={salonForm.control} name="address" render={({ field }) => (
+                    <FormItem>
+                      <FormLabel>Address</FormLabel>
+                      <FormControl><Textarea rows={3} {...field} placeholder="Full address" /></FormControl>
+                      <FormMessage />
+                    </FormItem>
+                  )} />
+                  <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+                    <FormField control={salonForm.control} name="city" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>City</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={salonForm.control} name="state" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>State</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={salonForm.control} name="pincode" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Pincode</FormLabel>
+                        <FormControl><Input {...field} /></FormControl>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <FormField control={salonForm.control} name="timezone" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Timezone</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select timezone" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {['Asia/Kolkata', 'Asia/Dubai', 'Asia/Singapore', 'UTC', 'America/New_York', 'Europe/London'].map((tz) => (
+                              <SelectItem key={tz} value={tz}>{tz}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                    <FormField control={salonForm.control} name="currency" render={({ field }) => (
+                      <FormItem>
+                        <FormLabel>Currency</FormLabel>
+                        <Select onValueChange={field.onChange} defaultValue={field.value}>
+                          <FormControl><SelectTrigger><SelectValue placeholder="Select currency" /></SelectTrigger></FormControl>
+                          <SelectContent>
+                            {['INR', 'USD', 'EUR', 'GBP', 'AED'].map((c) => (<SelectItem key={c} value={c}>{c}</SelectItem>))}
+                          </SelectContent>
+                        </Select>
+                        <FormMessage />
+                      </FormItem>
+                    )} />
+                  </div>
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving... </>
+                    : <><SaveIcon className="mr-2 h-4 w-4" />Save Profile</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="hours">
+          <Form {...hoursForm}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(hoursForm, '/api/settings/hours') }} className="space-y-6 max-w-2xl">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Clock className="h-5 w-5" />Opening Hours</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-4">
+                  {days.map((day: 'monday' | 'tuesday' | 'wednesday' | 'thursday' | 'friday' | 'saturday' | 'sunday') => (
+                    <FormField key={day} control={hoursForm.control} name={day} render={({ field }) => {
+                      const value = field.value as { open: string; close: string; closed: boolean }
+                      return (
+                        <FormItem>
+                          <FormLabel>{day.charAt(0).toUpperCase() + day.slice(1)}</FormLabel>
+                          <FormControl>
+                            <div className="flex items-center gap-4">
+                              <label className="flex items-center gap-2 cursor-pointer">
+                                <input type="checkbox" checked={!value.closed} onChange={(e) => setValue(day, { ...value, closed: !e.target.checked })} className="h-4 w-4 rounded border-glam-pink-300 text-primary focus:ring-primary" />
+                                <span className="text-sm">Closed</span>
+                              </label>
+                              <div className="flex items-center gap-2 flex-1">
+                                <label className="flex items-center gap-1">
+                                  <span className="text-sm text-muted-foreground">Open</span>
+                                  <Input type="time" value={value.open} onChange={(e) => setValue(day, { ...value, open: e.target.value })} className="w-32" disabled={value.closed} />
+                                </label>
+                                <label className="flex items-center gap-1">
+                                  <span className="text-sm text-muted-foreground">Close</span>
+                                  <Input type="time" value={value.close} onChange={(e) => setValue(day, { ...value, close: e.target.value })} className="w-32" disabled={value.closed} />
+                                </label>
+                              </div>
+                            </div>
+                          </FormControl>
+                        </FormItem>
+                      )}
+                    ))}
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving... </>
+                    : <><SaveIcon className="mr-2 h-4 w-4" />Save Hours</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="notifications">
+          <Form {...notificationsForm}>
+            <form onSubmit={(e) => { e.preventDefault(); handleSave(notificationsForm, '/api/settings/notifications') }} className="space-y-6 max-w-2xl">
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2"><Bell className="h-5 w-5" />Notification Preferences</CardTitle>
+                </CardHeader>
+                <CardContent className="space-y-6">
+                  {[
+                    { key: 'emailNotifications', label: 'Email Notifications', desc: 'Receive notifications via email' },
+                    { key: 'whatsappNotifications', label: 'WhatsApp Notifications', desc: 'Receive real-time updates on WhatsApp' },
+                    { key: 'smsNotifications', label: 'SMS Notifications', desc: 'Receive important alerts via SMS' },
+                    { key: 'pushNotifications', label: 'Push Notifications', desc: 'Receive push notifications on the app' },
+                    { key: 'appointmentReminders', label: 'Appointment Reminders', desc: 'Automatic reminders for upcoming appointments' },
+                    { key: 'marketingEmails', label: 'Marketing Emails', desc: 'Receive promotional offers and newsletters' },
+                    { key: 'promotionalSms', label: 'Promotional SMS', desc: 'Receive promotional offers via SMS' },
+                  ].map((pref) => (
+                    <FormField control={notificationsForm.control} name={pref.key} render={({ field }) => (
+                      <FormItem className="flex items-center justify-between p-4 rounded-lg bg-glam-pink-50">
+                        <div>
+                          <FormLabel className="mb-1">{pref.label}</FormLabel>
+                          <p className="text-sm text-muted-foreground">{pref.desc}</p>
+                        </div>
+                        <FormControl>
+                          <Switch checked={field.value} onCheckedChange={field.onChange} />
+                        </FormControl>
+                      </FormItem>
+                    )} />
+                  ))}
+                  <Button type="submit" disabled={isSaving}>
+                    {isSaving ? <><Loader2 className="mr-2 h-4 w-4 animate-spin" />Saving... </>
+                    : <><SaveIcon className="mr-2 h-4 w-4" />Save Preferences</>}
+                  </Button>
+                </CardContent>
+              </Card>
+            </form>
+          </Form>
+        </TabsContent>
+
+        <TabsContent value="appearance">
+          <Card>
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2"><Palette className="h-5 w-5" />Appearance & Branding</CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-6 max-w-2xl">
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div className="space-y-2">
+                  <Label>Logo</Label>
+                  <div className="relative">
+                    <div className="h-32 w-32 rounded-xl bg-glam-pink-100 flex items-center justify-center border-2 border-dashed border-glam-pink-300">
+                      <Camera className="h-8 w-8 text-muted-foreground" />
+                    </div>
+                    <Input type="file" accept="image/*" className="sr-only" id="logo-upload" />
+                    <label htmlFor="logo-upload" className="text-primary hover:underline text-sm cursor-pointer">Upload new logo</label>
+                  </div>
+                </div>
+                <div className="space-y-2">
+                  <Label>Favicon</Label>
+                  <div className="relative">
+                    <div className="h-16 w-16 rounded-lg bg-glam-pink-100 flex items-center justify-center border-2 border-dashed border-glam-pink-300">
+                      <Sparkles className="h-6 w-6 text-muted-foreground" />
+                    </div>
+                    <Input type="file" accept="image/*" className="sr-only" id="favicon-upload" />
+                    <label htmlFor="favicon-upload" className="text-primary hover:underline text-sm cursor-pointer">Upload favicon</label>
+                  </div>
+                </div>
+              </div>
+              <div className="space-y-4">
+                <Label>Primary Color</Label>
+                <div className="flex items-center gap-4">
+                  <Input type="color" defaultValue="#E91E63" className="h-12 w-16 rounded-lg border-0 cursor-pointer" />
+                  <span className="font-mono text-sm">#E91E63 (Hot Pink)</span>
+                </div>
+                <p className="text-sm text-muted-foreground">This color is used for primary buttons, links, and accents throughout the site.</p>
+              </div>
+              <div className="space-y-4">
+                <Label>Secondary Color</Label>
+                <div className="flex items-center gap-4">
+                  <Input type="color" defaultValue="#C9A96E" className="h-12 w-16 rounded-lg border-0 cursor-pointer" />
+                  <span className="font-mono text-sm">#C9A96E (Glam Gold)</span>
+                </div>
+                <p className="text-sm text-muted-foreground">Used for premium accents and highlights.</p>
+              </div>
+              <Button onClick={() => toast.success('Appearance settings saved!')}>
+                <SaveIcon className="mr-2 h-4 w-4" />
+                Save Appearance
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="integrations">
+          <div className="space-y-6 max-w-2xl">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Wifi className="h-5 w-5" />Third-Party Integrations</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                  {[
+                    { name: 'Razorpay', desc: 'Payment gateway for online payments', key: 'razorpay', fields: ['Key ID', 'Key Secret'] },
+                    { name: 'WhatsApp Business API', desc: 'Send notifications via WhatsApp', key: 'whatsapp', fields: ['Access Token', 'Phone Number ID', 'Verify Token'] },
+                    { name: 'Email (SMTP)', desc: 'Send transactional and marketing emails', key: 'email', fields: ['SMTP Host', 'Port', 'Username', 'Password'] },
+                    { name: 'SMS Gateway', desc: 'Send SMS notifications', key: 'sms', fields: ['API Key', 'Sender ID'] },
+                    { name: 'Google Maps', desc: 'Embed location map', key: 'maps', fields: ['API Key'] },
+                    { name: 'Google Analytics', desc: 'Track website analytics', key: 'analytics', fields: ['Measurement ID'] },
+                  ].map((integration) => (
+                    <Card key={integration.key} className="p-4">
+                      <div className="flex items-start justify-between mb-4">
+                        <div>
+                          <h4 className="font-semibold">{integration.name}</h4>
+                          <p className="text-sm text-muted-foreground">{integration.desc}</p>
+                        </div>
+                        <Switch defaultChecked={integration.key === 'razorpay' || integration.key === 'email'} />
+                      </div>
+                      <div className="space-y-2">
+                        {integration.fields.map((field) => (
+                          <Input key={field} type="password" placeholder={field} className="text-sm" />
+                        ))}
+                      </div>
+                    </Card>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+
+        <TabsContent value="security">
+          <div className="space-y-6 max-w-2xl">
+            <Card>
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2"><Shield className="h-5 w-5" />Security Settings</CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-6">
+                <div className="space-y-4">
+                  <h4 className="font-semibold">Admin Password</h4>
+                  <p className="text-sm text-muted-foreground">Change your admin panel password</p>
+                  <Button variant="outline" asChild>
+                    <a href="/admin/security/change-password">Change Password</a>
+                  </Button>
+                </div>
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-semibold">Two-Factor Authentication</h4>
+                  <p className="text-sm text-muted-foreground">Add an extra layer of security to your admin account</p>
+                  <Button variant="outline" asChild>
+                    <a href="/admin/security/two-factor">Setup 2FA</a>
+                  </Button>
+                </div>
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-semibold">Active Sessions</h4>
+                  <p className="text-sm text-muted-foreground">View and manage active login sessions</p>
+                  <Button variant="outline" asChild>
+                    <a href="/admin/security/sessions">View Sessions</a>
+                  </Button>
+                </div>
+                <div className="space-y-4 border-t pt-4">
+                  <h4 className="font-semibold text-destructive">Danger Zone</h4>
+                  <p className="text-sm text-muted-foreground">Irreversible actions</p>
+                  <Button variant="destructive" asChild>
+                    <a href="/admin/security/delete-account">Delete Account</a>
+                  </Button>
+                </div>
+              </CardContent>
+            </Card>
+          </div>
+        </TabsContent>
+      </Tabs>
+    </div>
+  )
+}

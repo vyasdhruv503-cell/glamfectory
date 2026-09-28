@@ -1,0 +1,579 @@
+# The Glam Factory - Complete Architecture Diagrams
+
+All diagrams in one Markdown file for easy viewing and export.
+
+---
+
+## 🏗️ Architecture Overview
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+graph TB
+    subgraph "Client (Browser)"
+        A[User] --> B[Next.js App]
+        B --> C[Public Pages]
+        B --> D[Customer Account]
+        B --> E[Admin Panel]
+        B --> F[Auth Pages]
+    end
+    
+    subgraph "Next.js Server"
+        G[Middleware] --> H[App Router]
+        H --> I[API Routes]
+        I --> J[Prisma ORM]
+    end
+    
+    subgraph "Database"
+        J --> K[(Neon PostgreSQL)]
+    end
+    
+    subgraph "External Services"
+        I --> L[Razorpay]
+        I --> M[WhatsApp API]
+        I --> N[Email/SMS]
+    end
+    
+    style A fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style K fill:#e3f2fd,stroke:#1976D2,stroke-width:2px
+    style L fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style M fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style N fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+```
+
+---
+
+## 👤 Customer Journey Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. DISCOVERY"
+        H[Home Page] --> S[Services Page]
+        S --> G[Gallery Page]
+        S --> O[Offers Page]
+        S --> T[Team Page]
+        S --> A[About Page]
+    end
+    
+    subgraph "2. BOOKING FLOW (6 Steps)"
+        C1[Step 1: Category] --> C2[Step 2: Service]
+        C2 --> C3[Step 3: Stylist]
+        C3 --> C4[Step 4: Date/Time]
+        C4 --> C5[Step 5: Details]
+        C5 --> C6[Step 6: Confirm]
+    end
+    
+    subgraph "3. POST-BOOKING"
+        C6 --> SP[Success Page]
+        SP --> WC[WhatsApp]
+        SP --> EM[Email]
+        SP --> SM[SMS]
+        SP --> LP[Loyalty Points]
+    end
+    
+    subgraph "4. CUSTOMER ACCOUNT"
+        ACC[Overview] --> APP[Appointments]
+        ACC --> LOY[Loyalty/Wallet]
+        ACC --> MEM[Membership]
+        ACC --> OFF[Offers]
+        ACC --> REF[Referrals]
+        ACC --> NOT[Notifications]
+        ACC --> PRO[Profile]
+    end
+    
+    style C1 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C2 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C3 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C4 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C5 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C6 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style SP fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style WC fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style EM fill:#e3f2fd,stroke:#2196F3,stroke-width:2px
+    style SM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+```
+
+---
+
+## 👨‍💼 Admin Panel Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. AUTH"
+        L[Login /auth] --> M[Middleware validates JWT]
+        M --> R{Role Check}
+        R -->|ADMIN| D[Dashboard]
+        R -->|Other| REDIRECT[Redirect to /account]
+    end
+    
+    subgraph "2. ADMIN DASHBOARD"
+        D --> QS[Quick Stats]
+        D --> UA[Upcoming Appointments]
+        D --> TS[Top Services]
+        D --> RC[Recent Customers]
+    end
+    
+    subgraph "3. MANAGEMENT MODULES"
+        D --> AM[Appointments Mgt]
+        D --> CM[Customers CRM]
+        D --> SM[Services Mgt]
+        D --> ST[Staff Mgt]
+        D --> OM[Offers Mgt]
+        D --> MM[Memberships]
+        D --> GM[Gallery Mgt]
+        D --> RM[Reviews Mod]
+        D --> PM[Payments]
+        D --> SET[Settings]
+    end
+    
+    subgraph "4. SETTINGS TABS"
+        SET --> PRO[Profile]
+        SET --> HOU[Hours]
+        SET --> NOT[Notifications]
+        SET --> APP[Appearance]
+        SET --> INT[Integrations]
+        SET --> SEC[Security]
+    end
+    
+    style L fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style AM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style CM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style SM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style ST fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style OM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style MM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style GM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style RM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style PM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style SET fill:#f3e5f5,stroke:#9C27B0,stroke-width:2px
+```
+
+---
+
+## 🔐 Authentication Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. REGISTER"
+        R1[Form Submit] --> R2[Validate Zod]
+        R2 --> R3[Hash Password bcryptjs]
+        R3 --> R4[Create User + Wallet]
+        R4 --> R5[JWT Cookie HttpOnly]
+    end
+    
+    subgraph "2. LOGIN"
+        L1[Creds Submit] --> L2[Verify Password]
+        L2 --> L3[Create JWT jose]
+        L3 --> L4[Set Cookie HttpOnly]
+        L4 --> L5[Redirect /account]
+    end
+    
+    subgraph "3. MIDDLEWARE PROTECTION"
+        REQ[Request] --> TOK[Get Token]
+        TOK --> VER[Verify JWT jose]
+        VER --> ROLE{Check Role}
+        ROLE -->|ADMIN| ALLOW_A["/admin/*"]
+        ROLE -->|CUSTOMER| ALLOW_C["/account/*"]
+        ROLE -->|ANY| ALLOW_B["/booking/*"]
+        ROLE -.->|DENY| DENY[401 Redirect]
+        
+        PROTECTED[Protected Routes]
+        PROTECTED --> ADM["/admin/* → ADMIN"]
+        PROTECTED --> ACC["/account/* → CUSTOMER"]
+        PROTECTED --> BOOK["/booking/* → Auth"]
+        PROTECTED --> API["/api/* → Auth"]
+    end
+    
+    style R1 fill:#fce4ec,stroke:#E91E63
+    style R5 fill:#e8f5e9,stroke:#4CAF50
+    style L5 fill:#e8f5e9,stroke:#4CAF50
+    style DENY fill:#ffebee,stroke:#F44336
+    style PROTECTED fill:#f3e5f5,stroke:#9C27B0
+```
+
+---
+
+## 🗄️ Database Schema
+
+```mermaid
+erDiagram
+    USER ||--o| CUSTOMER : "1:1"
+    USER ||--o| STAFF : "1:1"
+    USER ||--o{ APPOINTMENT : "1:N"
+    USER ||--o{ PAYMENT : "1:N"
+    USER ||--o| WALLET : "1:1"
+    USER ||--o{ LOYALTY_TXN : "1:N"
+    USER ||--o{ MEMBERSHIP : "1:N"
+    USER ||--o{ REFERRAL : "referrer N"
+    USER ||--o{ REFERRAL : "referee 1"
+    USER ||--o| REFERRAL_CODE : "1:1"
+    USER ||--o{ NOTIFICATION : "1:N"
+    
+    STAFF ||--o{ APPOINTMENT : "1:N"
+    STAFF ||--o{ REVIEW : "1:N"
+    STAFF ||--o{ STYLIST_SERVICE : "1:N"
+    
+    CUSTOMER ||--o{ APPOINTMENT : "1:N"
+    CUSTOMER ||--o{ PAYMENT : "1:N"
+    CUSTOMER ||--o| WALLET : "1:1"
+    CUSTOMER ||--o{ LOYALTY_TXN : "1:N"
+    CUSTOMER ||--o{ MEMBERSHIP : "1:N"
+    CUSTOMER ||--o{ REVIEW : "1:N"
+    
+    SERVICE ||--o{ APPOINTMENT : "1:N"
+    SERVICE ||--o{ SERVICE_ADDON : "1:N"
+    SERVICE ||--o{ STYLIST_SERVICE : "1:N"
+    SERVICE ||--o{ OFFER_SERVICE : "1:N"
+    SERVICE }|--|| CATEGORY : "N:1"
+    
+    APPOINTMENT ||--o{ BOOKING_SERVICE : "1:N"
+    APPOINTMENT ||--o{ BOOKING_ADDON : "1:N"
+    APPOINTMENT ||--|| PAYMENT : "1:1"
+    APPOINTMENT ||--o| REVIEW : "1:1"
+    
+    PAYMENT }|--|| APPOINTMENT : "1:1"
+    PAYMENT }|--|| USER : "1:N"
+    
+    WALLET ||--o{ WALLET_TXN : "1:N"
+    WALLET }|--|| USER : "1:1"
+    
+    LOYALTY_TXN }|--|| USER : "1:N"
+    
+    MEMBERSHIP }|--|| USER : "1:N"
+    MEMBERSHIP }|--|| MEMBERSHIP_PLAN : "N:1"
+    MEMBERSHIP ||--o{ MEMBERSHIP_PAYMENT : "1:N"
+    
+    REFERRAL_PROGRAM ||--o{ REFERRAL : "1:N"
+    REFERRAL }|--|| USER : "referrer"
+    REFERRAL }|--|| USER : "referee"
+    
+    CATEGORY ||--o{ SERVICE : "1:N"
+    OFFER ||--o{ OFFER_SERVICE : "1:N"
+    REVIEW }|--|| APPOINTMENT : "1:1"
+    REVIEW }|--|| STAFF : "N:1"
+    
+    GALLERY {
+        string id PK
+        string title
+        string mediaUrl
+        enum mediaType
+        string category
+        boolean isActive
+    }
+```
+
+---
+
+## 💳 Payment Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. CHECKOUT"
+        CHK[Select Payment Method] --> AMT[Calculate Amount]
+        AMT --> DISC[Apply Discounts]
+        DISC --> WAL[Apply Wallet Balance]
+        WAL --> FINAL[Final Amount + 18% GST]
+    end
+    
+    subgraph "2. PAYMENT METHODS"
+        FINAL --> ONLINE{Online?}
+        ONLINE -->|Yes| RAZ[Razorpay]
+        ONLINE -->|No| OFFLINE[Cash/UPI/Card/Wallet]
+    end
+    
+    subgraph "3. ONLINE PAYMENT"
+        RAZ --> CREATE[Create Order API]
+        CREATE --> CHECKOUT[Razorpay Checkout]
+        CHECKOUT --> CB{Callback}
+        CB -->|Success| VERIFY[Verify Signature]
+        CB -->|Failure| RETRY[Retry Payment]
+        VERIFY --> UPDATE[Update Status PAID]
+        UPDATE --> WALLET[Update Wallet + Loyalty]
+        UPDATE --> CONFIRM[Send Confirmation WA/Email]
+    end
+    
+    subgraph "4. OFFLINE PAYMENT"
+        OFFLINE --> RECORD[Record Payment PENDING]
+        RECORD --> COLLECT[Collect at Salon]
+        COLLECT --> CONFIRM_OFF[Mark PAID]
+        CONFIRM_OFF --> WALLET
+    end
+    
+    subgraph "5. WALLET & LOYALTY"
+        WALLET --> EARN[Earn Points ₹10=1pt]
+        WALLET --> REDEEM[Redeem 1pt=₹0.50]
+        WALLET --> REF[Referral: ₹100+₹50]
+    end
+    
+    style CHK fill:#fce4ec,stroke:#E91E63
+    style FINAL fill:#e8f5e9,stroke:#4CAF50
+    style RAZ fill:#fff3e0,stroke:#FF9800
+    style VERIFY fill:#e8f5e9,stroke:#4CAF50
+    style UPDATE fill:#e8f5e9,stroke:#4CAF50
+        style WALLET fill:#f3e5f5,stroke:#9C27B0
+```
+
+---
+
+## 🔔 Notification Flow
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "TRIGGERS"
+        T1[Appointment Created]
+        T2[Appointment Reminder 24h/2h]
+        T3[Appointment Completed]
+        T4[Payment Success]
+        T5[Payment Failed]
+        T6[New Offer Available]
+        T7[Loyalty Points Earned]
+        T8[Referral Reward]
+        T9[Birthday Offer]
+        T10[Membership Renewal]
+        T11[Review Submitted]
+    end
+    
+    subgraph "TEMPLATE SELECTION"
+        T1 --> TM1[Confirmation Template]
+        T2 --> TM2[Reminder Template]
+        T3 --> TM3[Review Request]
+        T4 --> TM4[Receipt Template]
+        T5 --> TM5[Retry Link]
+        T6 --> TM6[Promo Template]
+        T7 --> TM8[Points Summary]
+        T8 --> TM7[Referral Reward]
+        T9 --> TM9[Birthday Template]
+        T10 --> TM10[Renewal Notice]
+        T11 --> TM11[Thank You]
+    end
+    
+    subgraph "CHANNEL ROUTING"
+        TM1 --> CH1[WhatsApp + Email + SMS]
+        TM2 --> CH2[WhatsApp + Push]
+        TM3 --> CH3[Email + WhatsApp]
+        TM4 --> CH4[WhatsApp + Email]
+        TM5 --> CH5[WhatsApp + SMS]
+        TM6 --> CH4
+        TM7 --> CH6[In-App + WhatsApp]
+        TM7 --> CH6
+        TM8 --> CH6
+        TM9 --> CH1
+        TM10 --> CH1
+        TM11 --> CH7[In-App]
+    end
+    
+    subgraph "DELIVERY"
+        CH1 --> DQ[Queue Job]
+        CH2 --> DQ
+        CH3 --> DQ
+        CH4 --> DQ
+        CH5 --> DQ
+        CH6 --> DQ
+        CH7 --> DQ
+        DQ --> RETRY{Retry Logic 3x}
+        RETRY -->|Success| DELIVER[Deliver WA/Email/SMS/Push]
+        RETRY -->|Fail 3x| DLQ[Dead Letter Queue]
+        DELIVER --> LOG[Log Status & Track]
+        DLQ --> ALERT[Alert Admin]
+    end
+    
+    style T1 fill:#fce4ec,stroke:#E91E63
+    style DQ fill:#fff3e0,stroke:#FF9800
+    style DELIVER fill:#e8f5e9,stroke:#4CAF50
+    style DLQ fill:#ffebee,stroke:#F44336
+```
+
+---
+
+## 💻 Tech Stack Mindmap
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+mindmap
+  root((The Glam Factory<br/>Tech Stack))
+    Frontend
+      Next.js 14<br/>(App Router)
+      React 18
+      TypeScript
+      Tailwind CSS
+      shadcn/ui + Radix UI
+      Zustand<br/>(Booking State)
+      React Hook Form + Zod
+      Framer Motion
+      React Hot Toast
+    Backend
+      Next.js 14<br/>API Routes
+      NextAuth v5<br/>(Credentials + OAuth)
+      Prisma ORM
+      Razorpay SDK
+      WhatsApp Business API
+      Email/SMS Providers
+      JWT (jose)
+      bcryptjs
+    Database
+      Neon PostgreSQL
+      Prisma ORM
+      25 Models
+      10 Enums
+      Migrations
+      Seeds
+      Relations
+      Indexes
+    State Management
+      Zustand<br/>(Booking Flow)
+      React Hook Form
+      Server Components
+      Client Components
+      Server Actions
+    Authentication
+      NextAuth v5
+      Credentials Provider
+      OAuth (Google/GitHub)
+      JWT Strategy
+      Middleware Protection
+    Deployment
+      Vercel
+      Docker
+      GitHub Actions
+      CI/CD
+      Preview Deploys
+```
+
+---
+
+## 📁 Project Structure
+
+```mermaid
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+graph TD
+    TG[the-glam-factory]
+    
+    TG --> APP[app/]
+    TG --> COMP[components/]
+    TG --> LIB[lib/]
+    TG --> STORES[stores/]
+    TG --> PRISMA[prisma/]
+    TG --> DOCS[docs/]
+    TG --> PUB[public/]
+    TG --> MID[middleware.ts]
+    TG --> TAIL[tailwind.config.js]
+    TG --> NEXT[next.config.js]
+    TG --> PKG[package.json]
+    TG --> TS[tsconfig.json]
+    
+    APP --> PUB_DIR["(public)/"]
+    APP --> CUST["(customer)/"]
+    APP --> ADMIN["(admin)/"]
+    APP --> AUTH[auth/]
+    APP --> API[api/]
+    APP --> BOOK[booking/]
+    APP --> GLOBAL[globals.css]
+    APP --> LAYOUT[layout.tsx]
+    APP --> PROV[providers.tsx]
+    
+    PUB_DIR --> HOME[page.tsx]
+    PUB_DIR --> SERV[services/]
+    PUB_DIR --> GAL[gallery/]
+    PUB_DIR --> OFF[offers/]
+    PUB_DIR --> TEAM[team/]
+    PUB_DIR --> ABOUT[about/]
+    PUB_DIR --> CONTACT[contact/]
+    PUB_DIR --> MEM[membership/]
+    PUB_DIR --> REV[reviews/]
+    PUB_DIR --> FAQ[faq/]
+    PUB_DIR --> PRIV[privacy/]
+    PUB_DIR --> TERMS[terms/]
+    PUB_DIR --> LAYOUT[layout.tsx]
+    
+    SERV --> S1[page.tsx]
+    SERV --> S2["[slug]/page.tsx"]
+    
+    BOOK --> B1[page.tsx]
+    BOOK --> B2[service/]
+    BOOK --> B3[stylist/]
+    BOOK --> B4[datetime/]
+    BOOK --> B5[details/]
+    BOOK --> B6[confirm/]
+    BOOK --> B7[success/]
+    
+    CUST --> ACC[account/]
+    ACC --> A1[page.tsx]
+    ACC --> A2[appointments/]
+    ACC --> A3[loyalty/]
+    ACC --> A4[membership/]
+    ACC --> A5[offers/]
+    ACC --> A6[referrals/]
+    ACC --> A7[notifications/]
+    ACC --> A8[profile/]
+    
+    ADMIN --> DASH[dashboard/]
+    ADMIN --> APPT[appointments/]
+    ADMIN --> CUST2[customers/]
+    ADMIN --> SERV2[services/]
+    ADMIN --> STAFF[staff/]
+    ADMIN --> OFF2[offers/]
+    ADMIN --> MEM2[memberships/]
+    ADMIN --> GAL2[gallery/]
+    ADMIN --> REV[reviews/]
+    ADMIN --> PAY[payments/]
+    ADMIN --> SET[settings/]
+    ADMIN --> LAYOUT[layout.tsx]
+    
+    AUTH --> LOGIN[login/page.tsx]
+    AUTH --> REG[register/page.tsx]
+    AUTH --> ALAYOUT[layout.tsx]
+    
+    API --> AUTH_API[auth/]
+    API --> APPT_API[appointments/]
+    API --> CUST_API[customers/]
+    API --> SERV_API[services/]
+    API --> STAFF_API[staff/]
+    API --> OFF_API[offers/]
+    API --> PAY_API[payments/]
+    
+    COMP --> UI[ui/]
+    COMP --> PUB_COMP[public/]
+    COMP --> BOOK_COMP[booking/]
+    COMP --> ADMIN_COMP[admin/]
+    
+    UI --> U1[button.tsx]
+    UI --> U2[input.tsx]
+    UI --> U3[card.tsx]
+    UI --> U4[dialog.tsx]
+    UI --> U5[form.tsx]
+    UI --> U6[select.tsx]
+    UI --> U7[table.tsx]
+    UI --> U8[toast.tsx]
+    
+    PUB_COMP --> P1[navbar.tsx]
+    PUB_COMP --> P2[footer.tsx]
+    PUB_COMP --> P3[hero.tsx]
+    PUB_COMP --> P4[service-card.tsx]
+    PUB_COMP --> P5[testimonial-card.tsx]
+    PUB_COMP --> P6[offer-card.tsx]
+    PUB_COMP --> P7[gallery-grid.tsx]
+    PUB_COMP --> P8[membership-card.tsx]
+    PUB_COMP --> P9[team-card.tsx]
+    PUB_COMP --> P10[whatsapp-button.tsx]
+    
+    LIB --> L1[auth/]
+    LIB --> L2[db/]
+    LIB --> L3[utils.ts]
+    LIB --> L4[validations/]
+    
+    PRISMA --> PS[schema.prisma]
+    PRISMA --> PM[migrations/]
+    PRISMA --> PS2[seed.ts]
+    
+    style TG fill:#fce4ec,stroke:#E91E63,stroke-width:3px
+    style APP fill:#fce4ec,stroke:#E91E63
+    style COMP fill:#e8f5e9,stroke:#4CAF50
+    style LIB fill:#fff3e0,stroke:#FF9800
+    style PRISMA fill:#e3f2fd,stroke:#2196F3
+    style API fill:#f3e5f5,stroke:#9C27B0
+```

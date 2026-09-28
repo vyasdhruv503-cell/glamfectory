@@ -1,0 +1,37 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. REGISTER"
+        R1[Form Submit] --> R2[Validate Zod]
+        R2 --> R3[Hash Password bcryptjs]
+        R3 --> R4[Create User + Wallet]
+        R4 --> R5[JWT Cookie HttpOnly]
+    end
+    
+    subgraph "2. LOGIN"
+        L1[Creds Submit] --> L2[Verify Password]
+        L2 --> L3[Create JWT jose]
+        L3 --> L4[Set Cookie HttpOnly]
+        L4 --> L5[Redirect /account]
+    end
+    
+    subgraph "3. MIDDLEWARE PROTECTION"
+        REQ[Request] --> TOK[Get Token]
+        TOK --> VER[Verify JWT jose]
+        VER --> ROLE{Check Role}
+        ROLE -->|ADMIN| ALLOW_A["/admin/*"]
+        ROLE -->|CUSTOMER| ALLOW_C["/account/*"]
+        ROLE -->|ANY| ALLOW_B["/booking/*"]
+        ROLE -.->|DENY| DENY[401 Redirect]
+        
+        PROTECTED[Protected Routes]
+        PROTECTED --> ADM["/admin/* → ADMIN"]
+        PROTECTED --> ACC["/account/* → CUSTOMER"]
+        PROTECTED --> BOOK["/booking/* → Auth"]
+        PROTECTED --> API["/api/* → Auth"]
+    end
+    
+    style R1 fill:#fce4ec,stroke:#E91E63
+    style R5 fill:#e8f5e9,stroke:#4CAF50
+    style L5 fill:#e8f5e9,stroke:#4CAF50
+    style DENY fill:#ffebee,stroke:#F44336
+    style PROTECTED fill:#f3e5f5,stroke:#9C27B0

@@ -1,0 +1,50 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. AUTH"
+        L[Login /auth] --> M[Middleware validates JWT]
+        M --> R{Role Check}
+        R -->|ADMIN| D[Dashboard]
+        R -->|Other| REDIRECT[Redirect to /account]
+    end
+    
+    subgraph "2. ADMIN DASHBOARD"
+        D --> QS[Quick Stats]
+        D --> UA[Upcoming Appointments]
+        D --> TS[Top Services]
+        D --> RC[Recent Customers]
+    end
+    
+    subgraph "3. MANAGEMENT MODULES"
+        D --> AM[Appointments Mgt]
+        D --> CM[Customers CRM]
+        D --> SM[Services Mgt]
+        D --> ST[Staff Mgt]
+        D --> OM[Offers Mgt]
+        D --> MM[Memberships]
+        D --> GM[Gallery Mgt]
+        D --> RM[Reviews Mod]
+        D --> PM[Payments]
+        D --> SET[Settings]
+    end
+    
+    subgraph "4. SETTINGS TABS"
+        SET --> PRO[Profile]
+        SET --> HOU[Hours]
+        SET --> NOT[Notifications]
+        SET --> APP[Appearance]
+        SET --> INT[Integrations]
+        SET --> SEC[Security]
+    end
+    
+    style L fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style D fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style AM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style CM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style SM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style ST fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style OM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style MM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style GM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style RM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style PM fill:#fff3e0,stroke:#FF9800,stroke-width:2px
+    style SET fill:#f3e5f5,stroke:#9C27B0,stroke-width:2px

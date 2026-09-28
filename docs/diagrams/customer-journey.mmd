@@ -1,0 +1,46 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. DISCOVERY"
+        H[Home Page] --> S[Services Page]
+        S --> G[Gallery Page]
+        S --> O[Offers Page]
+        S --> T[Team Page]
+        S --> A[About Page]
+    end
+    
+    subgraph "2. BOOKING FLOW (6 Steps)"
+        C1[Step 1: Category] --> C2[Step 2: Service]
+        C2 --> C3[Step 3: Stylist]
+        C3 --> C4[Step 4: Date/Time]
+        C4 --> C5[Step 5: Details]
+        C5 --> C6[Step 6: Confirm]
+    end
+    
+    subgraph "3. POST-BOOKING"
+        C6 --> SP[Success Page]
+        SP --> WC[WhatsApp]
+        SP --> EM[Email]
+        SP --> SM[SMS]
+        SP --> LP[Loyalty Points]
+    end
+    
+    subgraph "4. CUSTOMER ACCOUNT"
+        ACC[Overview] --> APP[Appointments]
+        ACC --> LOY[Loyalty/Wallet]
+        ACC --> MEM[Membership]
+        ACC --> OFF[Offers]
+        ACC --> REF[Referrals]
+        ACC --> NOT[Notifications]
+        ACC --> PRO[Profile]
+    end
+    
+    style C1 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C2 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C3 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C4 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C5 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style C6 fill:#fce4ec,stroke:#E91E63,stroke-width:2px
+    style SP fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style WC fill:#e8f5e9,stroke:#4CAF50,stroke-width:2px
+    style EM fill:#e3f2fd,stroke:#2196F3,stroke-width:2px
+    style SM fill:#fff3e0,stroke:#FF9800,stroke-width:2px

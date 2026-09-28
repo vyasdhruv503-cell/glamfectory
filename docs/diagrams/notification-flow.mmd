@@ -1,0 +1,64 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "TRIGGERS"
+        T1[Appointment Created]
+        T2[Appointment Reminder 24h/2h]
+        T3[Appointment Completed]
+        T4[Payment Success]
+        T5[Payment Failed]
+        T6[New Offer Available]
+        T7[Loyalty Points Earned]
+        T8[Referral Reward]
+        T9[Birthday Offer]
+        T10[Membership Renewal]
+        T11[Review Submitted]
+    end
+    
+    subgraph "TEMPLATE SELECTION"
+        T1 --> TM1[Confirmation Template]
+        T2 --> TM2[Reminder Template]
+        T3 --> TM3[Review Request]
+        T4 --> TM4[Receipt Template]
+        T5 --> TM5[Retry Link]
+        T6 --> TM6[Promo Template]
+        T7 --> TM8[Points Summary]
+        T8 --> TM7[Referral Reward]
+        T9 --> TM9[Birthday Template]
+        T10 --> TM10[Renewal Notice]
+        T11 --> TM11[Thank You]
+    end
+    
+    subgraph "CHANNEL ROUTING"
+        TM1 --> CH1[WhatsApp + Email + SMS]
+        TM2 --> CH2[WhatsApp + Push]
+        TM3 --> CH3[Email + WhatsApp]
+        TM4 --> CH4[WhatsApp + Email]
+        TM5 --> CH5[WhatsApp + SMS]
+        TM6 --> CH4
+        TM7 --> CH6[In-App + WhatsApp]
+        TM7 --> CH6
+        TM8 --> CH6
+        TM9 --> CH1
+        TM10 --> CH1
+        TM11 --> CH7[In-App]
+    end
+    
+    subgraph "DELIVERY"
+        CH1 --> DQ[Queue Job]
+        CH2 --> DQ
+        CH3 --> DQ
+        CH4 --> DQ
+        CH5 --> DQ
+        CH6 --> DQ
+        CH7 --> DQ
+        DQ --> RETRY{Retry Logic 3x}
+        RETRY -->|Success| DELIVER[Deliver WA/Email/SMS/Push]
+        RETRY -->|Fail 3x| DLQ[Dead Letter Queue]
+        DELIVER --> LOG[Log Status & Track]
+        DLQ --> ALERT[Alert Admin]
+    end
+    
+    style T1 fill:#fce4ec,stroke:#E91E63
+    style DQ fill:#fff3e0,stroke:#FF9800
+    style DELIVER fill:#e8f5e9,stroke:#4CAF50
+    style DLQ fill:#ffebee,stroke:#F44336

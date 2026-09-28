@@ -1,0 +1,45 @@
+%%{init: {'theme': 'base', 'themeVariables': {'primaryColor': '#E91E63', 'secondaryColor': '#C9A96E'}}}%%
+flowchart TD
+    subgraph "1. CHECKOUT"
+        CHK[Select Payment Method] --> AMT[Calculate Amount]
+        AMT --> DISC[Apply Discounts]
+        DISC --> WAL[Apply Wallet Balance]
+        WAL --> FINAL[Final Amount + 18% GST]
+    end
+    
+    subgraph "2. PAYMENT METHODS"
+        FINAL --> ONLINE{Online?}
+        ONLINE -->|Yes| RAZ[Razorpay]
+        ONLINE -->|No| OFFLINE[Cash/UPI/Card/Wallet]
+    end
+    
+    subgraph "3. ONLINE PAYMENT"
+        RAZ --> CREATE[Create Order API]
+        CREATE --> CHECKOUT[Razorpay Checkout]
+        CHECKOUT --> CB{Callback}
+        CB -->|Success| VERIFY[Verify Signature]
+        CB -->|Failure| RETRY[Retry Payment]
+        VERIFY --> UPDATE[Update Status PAID]
+        UPDATE --> WALLET[Update Wallet + Loyalty]
+        UPDATE --> CONFIRM[Send Confirmation WA/Email]
+    end
+    
+    subgraph "4. OFFLINE PAYMENT"
+        OFFLINE --> RECORD[Record Payment PENDING]
+        RECORD --> COLLECT[Collect at Salon]
+        COLLECT --> CONFIRM_OFF[Mark PAID]
+        CONFIRM_OFF --> WALLET
+    end
+    
+    subgraph "5. WALLET & LOYALTY"
+        WALLET --> EARN[Earn Points ₹10=1pt]
+        WALLET --> REDEEM[Redeem 1pt=₹0.50]
+        WALLET --> REF[Referral: ₹100+₹50]
+    end
+    
+    style CHK fill:#fce4ec,stroke:#E91E63
+    style FINAL fill:#e8f5e9,stroke:#4CAF50
+    style RAZ fill:#fff3e0,stroke:#FF9800
+    style VERIFY fill:#e8f5e9,stroke:#4CAF50
+    style UPDATE fill:#e8f5e9,stroke:#4CAF50
+    style WALLET fill:#f3e5f5,stroke:#9C27B0
