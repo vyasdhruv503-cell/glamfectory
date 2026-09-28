@@ -19,7 +19,7 @@ export default auth((req) => {
     return Response.redirect(loginUrl)
   }
 
-  const role = (req.auth as any)?.user?.role || (req.auth as any)?.role
+  const role = (((req.auth as any)?.user?.role || (req.auth as any)?.role || '') as string).toUpperCase()
 
   if (isOnAdmin && isLoggedIn) {
     if (role !== 'ADMIN') {
@@ -42,6 +42,5 @@ export const config = {
     '/admin/:path*',
     '/account/:path*',
     '/auth/:path*',
-    '/api/:path*',
   ],
 }

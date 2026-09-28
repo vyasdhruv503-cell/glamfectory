@@ -59,28 +59,30 @@ export default function LoginPage() {
 
       if (result?.error) {
         toast.error('Invalid email or password')
-      } else {
-        toast.success('Welcome back!')
-        const session = await getSession()
-        const userRole = session?.user?.role
-        const requestedUrl = searchParams.get('callbackUrl')
-
-        if (requestedUrl && requestedUrl !== '/account') {
-          if (requestedUrl.startsWith('/admin') && userRole !== 'ADMIN') {
-            router.push('/account')
-          } else {
-            router.push(requestedUrl)
-          }
-        } else if (userRole === 'ADMIN') {
-          router.push('/admin')
-        } else {
-          router.push('/account')
-        }
-        router.refresh()
+        setIsLoading(false)
+        return
       }
+
+      toast.success('Welcome back!')
+
+      const requestedUrl = searchParams.get('callbackUrl')
+      let destination = '/account'
+
+      if (requestedUrl && !requestedUrl.startsWith('/auth')) {
+        destination = requestedUrl
+      } else if (data.email.toLowerCase() === 'admin@theglamfactory.in') {
+        destination = '/admin'
+      } else {
+        const session = await getSession()
+        if (session?.user?.role === 'ADMIN') {
+          destination = '/admin'
+        }
+      }
+
+      // Hard navigation ensures browser sends fresh session cookies to middleware
+      window.location.href = destination
     } catch {
       toast.error('Something went wrong')
-    } finally {
       setIsLoading(false)
     }
   }
