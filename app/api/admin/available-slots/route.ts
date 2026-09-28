@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     const endOfDay = new Date(dateObj.setHours(23, 59, 59, 999))
 
     const stylist = await prisma.stylist.findUnique({
-      where: { id: serviceId },
+      where: { id: stylistId },
       include: {
         user: true,
         availability: { where: { dayOfWeek: new Date(date).getDay() } },
@@ -55,7 +55,7 @@ export async function GET(request: NextRequest) {
     const endTime = new Date(`1970-01-01T${availability.endTime}:00`)
 
     const duration = await prisma.service.findUnique({
-      where: { id: searchParams.get('serviceId') },
+      where: { id: searchParams.get('serviceId') || undefined },
       select: { duration: true },
     })
 
@@ -72,22 +72,22 @@ export async function GET(request: NextRequest) {
       const slotStart = new Date(currentTime)
       const slotEnd = new Date(currentTime.getTime() + 60000 * 30) // 30 min intervals
 
-      const existingAppointment = await prisma.appointment.findFirst({
+      const existingAppointment = await prisma.booking.findFirst({
         where: {
           stylistId: searchParams.get('stylistId') || undefined,
           scheduledAt: {
             gte: new Date(date),
             lt: new Date(new Date(date).getTime() + 86400000),
           },
-          status: { in: ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS'] },
+          status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
         },
       })
 
       // Simplified: check if slot overlaps with existing appointment
-      const isAvailable = !await prisma.appointment.findFirst({
+      const isAvailable = !await prisma.booking.findFirst({
         where: {
           stylistId: searchParams.get('stylistId') || undefined,
-          status: { in: ['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS'] },
+          status: { in: ['CONFIRMED', 'IN_PROGRESS'] },
           scheduledAt: {
             gte: new Date(new Date(date).setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0)),
             lt: new Date(new Date(date).setHours(currentTime.getHours(), currentTime.getMinutes(), 0, 0) + 60000 * 30),

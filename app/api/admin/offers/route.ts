@@ -47,14 +47,14 @@ export async function GET(request: NextRequest) {
         where,
         include: {
           services: { include: { service: { select: { id: true, name: true } } } },
-          _count: { select: { redemptions: true } },
+          _count: { select: { services: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
       prisma.offer.count({ where }),
-    )
+    ])
 
     return NextResponse.json({
       offers,
@@ -74,23 +74,25 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const validated = offerSchema.safeParse(await request.json())
+    const validated = offerSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const { serviceIds, ...data } = validated.data
+    const { serviceIds, validFrom, validTill, ...data } = validated.data
 
     const offer = await prisma.offer.create({
       data: {
         ...data,
-        services: data.serviceIds?.length
-          ? { create: data.serviceIds!.map(sid => ({ serviceId: sid })) }
+        validFrom: new Date(validFrom),
+        validTill: new Date(validTill),
+        services: serviceIds?.length
+          ? { create: serviceIds.map(sid => ({ serviceId: sid })) }
           : undefined,
       },
       include: { services: { include: { service: { select: { id: true, name: true } } } } },
-    )
+    })
 
     return NextResponse.json(offer, { status: 201 })
   } catch (error) {

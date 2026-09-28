@@ -48,7 +48,7 @@ export async function GET(request: NextRequest) {
         take: limit,
       }),
       prisma.gallery.count({ where }),
-    )
+    ])
 
     return NextResponse.json({
       items,
@@ -71,11 +71,12 @@ export async function POST(request: Request) {
     const validated = z.object({
       title: z.string().min(2),
       description: z.string().optional(),
+      mediaUrl: z.string().min(1),
       mediaType: z.enum(['PHOTO', 'VIDEO', 'BEFORE_AFTER']),
       category: z.string().optional(),
       sortOrder: z.number().int().min(0).default(0),
       isActive: z.boolean().default(true),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })

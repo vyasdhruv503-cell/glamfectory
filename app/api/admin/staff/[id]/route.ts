@@ -7,7 +7,6 @@ const updateStaffSchema = z.object({
   name: z.string().min(2).optional(),
   email: z.string().email().optional(),
   phone: z.string().min(10).optional(),
-  role: z.enum(['STYLIST', 'MANAGER', 'RECEPTIONIST']).optional(),
   specialization: z.array(z.string()).optional(),
   experience: z.number().int().min(0).optional(),
   commissionRate: z.number().min(0).max(100).optional(),
@@ -15,7 +14,7 @@ const updateStaffSchema = z.object({
   bio: z.string().optional(),
   avgRating: z.number().min(0).max(5).optional(),
   totalReviews: z.number().int().min(0).optional(),
-}
+})
 
 export async function GET(
   request: NextRequest,
@@ -29,17 +28,17 @@ export async function GET(
 
     const { id } = await params
 
-    const staff = await prisma.staff.findUnique({
+    const staff = await prisma.stylist.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, email: true, name: true, role: true, image: true, createdAt: true } },
+        user: { select: { id: true, email: true, name: true, role: true, avatarUrl: true, createdAt: true } },
         availability: true,
         services: { include: { service: { select: { id: true, name: true, category: { select: { name: true } } } } } },
         bookings: { take: 10, orderBy: { scheduledAt: 'desc' } },
         reviews: { take: 10, orderBy: { createdAt: 'desc' } },
         _count: { select: { bookings: true, reviews: true } },
       },
-    )
+    })
 
     if (!staff) {
       return NextResponse.json({ error: 'Staff member not found' }, { status: 404 })
@@ -64,29 +63,13 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const validated = z.object({
-      name: z.string().min(2).optional(),
-      email: z.string().email().optional(),
-      phone: z.string().min(10).optional(),
-      role: z.enum(['STYLIST', 'MANAGER', 'RECEPTIONIST']).optional(),
-      specialization: z.array(z.string()).optional(),
-      experience: z.number().int().min(0).optional(),
-      commissionRate: z.number().min(0).max(100).optional(),
-      isActive: z.boolean().optional(),
-      bio: z.string().optional(),
-      avgRating: z.number().min(0).max(5).optional(),
-      totalReviews: z.number().int().min(0).optional(),
-    }).safeParse(await request.json())
+    const validated = updateStaffSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
     const updateData: any = {}
-    if (validated.data.name !== undefined) updateData.name = validated.data.name
-    if (validated.data.email) updateData.email = validated.data.email
-    if (validated.data.phone) updateData.phone = validated.data.phone
-    if (validated.data.role) updateData.role = validated.data.role
     if (validated.data.specialization !== undefined) updateData.specialization = validated.data.specialization
     if (validated.data.experience !== undefined) updateData.experience = validated.data.experience
     if (validated.data.commissionRate !== undefined) updateData.commissionRate = validated.data.commissionRate
@@ -95,11 +78,26 @@ export async function PUT(
     if (validated.data.avgRating !== undefined) updateData.avgRating = validated.data.avgRating
     if (validated.data.totalReviews !== undefined) updateData.totalReviews = validated.data.totalReviews
 
-    const staff = await prisma.staff.update({
+    // If user info needs updating
+    if (validated.data.name || validated.data.email || validated.data.phone) {
+      const currentStaff = await prisma.stylist.findUnique({ where: { id }, select: { userId: true } })
+      if (currentStaff) {
+        await prisma.user.update({
+          where: { id: currentStaff.userId },
+          data: {
+            name: validated.data.name,
+            email: validated.data.email,
+            phone: validated.data.phone,
+          },
+        })
+      }
+    }
+
+    const staff = await prisma.stylist.update({
       where: { id },
       data: updateData,
       include: {
-        user: { select: { id: true, email: true, name: true, role: true, image: true } },
+        user: { select: { id: true, email: true, name: true, role: true, avatarUrl: true } },
         services: { include: { service: { select: { id: true, name: true } } } },
       },
     })
@@ -124,13 +122,13 @@ export async function DELETE(
     const { id } = await params
 
     // Delete related staff services first
-    await prisma.staffService.deleteMany({ where: { stylistId: id } })
-    await prisma.staffAvailability.deleteMany({ where: { stylistId: id } })
+    await prisma.stylistService.deleteMany({ where: { stylistId: id } })
+    await prisma.stylistAvailability.deleteMany({ where: { stylistId: id } })
 
     // Get the user ID first
-    const staff = await prisma.staff.findUnique({ where: { id }, select: { userId: true } })
+    const staff = await prisma.stylist.findUnique({ where: { id }, select: { userId: true } })
     if (staff) {
-      await prisma.staff.delete({ where: { id } })
+      await prisma.stylist.delete({ where: { id } })
       await prisma.user.delete({ where: { id: staff.userId } })
     }
 

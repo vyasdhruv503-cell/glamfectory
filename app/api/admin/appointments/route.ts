@@ -40,19 +40,18 @@ export async function GET(request: NextRequest) {
     }
     if (search) {
       where.OR = [
-        { customer: { name: { contains: search, mode: 'insensitive' } } },
-        { customer: { email: { contains: search, mode: 'insensitive' } } },
-        { customer: { phone: { contains: search } } },
-        { service: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { name: { contains: search, mode: 'insensitive' } } },
+        { user: { email: { contains: search, mode: 'insensitive' } } },
+        { user: { phone: { contains: search } } },
       ]
     }
 
     const [appointments, total] = await Promise.all([
-      prisma.appointment.findMany({
+      prisma.booking.findMany({
         where,
         include: {
-          customer: { select: { id: true, name: true, email: true, phone: true } },
-          stylist: { select: { id: true, name: true, user: { select: { name: true } } } },
+          user: { select: { id: true, name: true, email: true, phone: true } },
+          stylist: { select: { id: true, user: { select: { name: true } } } },
           services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
           addOns: { include: { addOn: { select: { id: true, name: true, price: true } } } },
           payment: { select: { id: true, amount: true, status: true, method: true } },
@@ -61,12 +60,12 @@ export async function GET(request: NextRequest) {
         skip,
         take: limit,
       }),
-      prisma.appointment.count({ where }),
+      prisma.booking.count({ where }),
     ])
 
     return NextResponse.json({
       appointments,
-      pagination: { page: page, limit, total, pages: Math.ceil(total / limit) },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     })
   } catch (error) {
     console.error('Error fetching appointments:', error)
@@ -89,44 +88,40 @@ export async function POST(request: NextRequest) {
 
     const { customerId, stylistId, serviceIds, addOnIds, scheduledAt, notes } = validated.data
 
-    // Calculate total duration and price
+    // Calculate total price
     const services = await prisma.service.findMany({
-      where: { id: { in: validated.data.serviceIds } },
+      where: { id: { in: serviceIds } },
       select: { id: true, duration: true, price: true, discountPrice: true },
     })
 
-    const addOns = validated.data.addOnIds?.length
+    const addOns = addOnIds?.length
       ? await prisma.serviceAddOn.findMany({
-          where: { id: { in: validated.data.addOnIds } },
+          where: { id: { in: addOnIds } },
           select: { id: true, price: true, duration: true },
         })
       : []
 
-    const totalDuration = services.reduce((sum, s) => sum + s.duration, 0) +
-      addOns.reduce((sum, a) => sum + a.duration, 0)
-
     const totalPrice = services.reduce((sum, s) => sum + (s.discountPrice ?? s.price), 0) +
       addOns.reduce((sum, a) => sum + a.price, 0)
 
-    const appointment = await prisma.appointment.create({
+    const appointment = await prisma.booking.create({
       data: {
-        customerId: validated.data.customerId,
-        stylistId: validated.data.stylistId,
-        scheduledAt: new Date(validated.data.scheduledAt),
-        duration: totalDuration,
+        userId: customerId,
+        stylistId: stylistId,
+        scheduledAt: new Date(scheduledAt),
         totalAmount: totalPrice,
         finalAmount: totalPrice,
-        notes: validated.data.notes,
-        status: 'SCHEDULED',
+        notes: notes,
+        status: 'CONFIRMED',
         services: {
           create: services.map(s => ({
             serviceId: s.id,
             price: s.discountPrice ?? s.price,
           })),
         },
-        addOns: validated.data.addOnIds?.length
+        addOns: addOnIds?.length
           ? {
-              create: validated.data.addOnIds!.map(aid => ({
+              create: addOnIds.map(aid => ({
                 addOnId: aid,
                 price: addOns.find(a => a.id === aid)!.price,
               })),
@@ -134,8 +129,8 @@ export async function POST(request: NextRequest) {
           : undefined,
       },
       include: {
-        customer: { select: { id: true, name: true, email: true, phone: true } },
-        stylist: { select: { id: true, name: true, user: { select: { name: true } } } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        stylist: { select: { id: true, user: { select: { name: true } } } },
         services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
         addOns: { include: { addOn: { select: { id: true, name: true, price: true } } } },
       },

@@ -15,7 +15,7 @@ const updateOfferSchema = z.object({
   validTill: z.string().optional(),
   isActive: z.boolean().optional(),
   serviceIds: z.array(z.string().cuid()).optional(),
-)
+})
 
 export async function GET(
   request: NextRequest,
@@ -33,7 +33,7 @@ export async function GET(
       where: { id },
       include: {
         services: { include: { service: { select: { id: true, name: true } } } },
-        _count: { select: { redemptions: true } },
+        _count: { select: { services: true } },
       },
     })
 
@@ -72,24 +72,29 @@ export async function PUT(
       validTill: z.string().optional(),
       isActive: z.boolean().optional(),
       serviceIds: z.array(z.string().cuid()).optional(),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const { serviceIds, ...data } = validated.data
+    const { serviceIds, validFrom, validTill, ...data } = validated.data
+
+    const updateData: any = { ...data }
+    if (validFrom) updateData.validFrom = new Date(validFrom)
+    if (validTill) updateData.validTill = new Date(validTill)
+    if (serviceIds !== undefined) {
+      updateData.services = {
+        deleteMany: {},
+        create: serviceIds.map(sid => ({ serviceId: sid })),
+      }
+    }
 
     const offer = await prisma.offer.update({
       where: { id },
-      data: {
-        ...data,
-        services: data.serviceIds
-          ? { deleteMany: {}, create: data.serviceIds!.map(sid => ({ serviceId: sid })) }
-          : undefined,
-      },
+      data: updateData,
       include: { services: { include: { service: { select: { id: true, name: true } } } } },
-    )
+    })
 
     return NextResponse.json(offer)
   } catch (error) {

@@ -6,7 +6,7 @@ import { z } from 'zod'
 const updateAppointmentSchema = z.object({
   stylistId: z.string().cuid().optional(),
   scheduledAt: z.string().datetime().optional(),
-  status: z.enum(['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
+  status: z.enum(['PENDING', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
   notes: z.string().optional(),
   serviceIds: z.array(z.string().cuid()).optional(),
   addOnIds: z.array(z.string().cuid()).optional(),
@@ -24,11 +24,11 @@ export async function GET(
 
     const { id } = await params
 
-    const appointment = await prisma.appointment.findUnique({
+    const appointment = await prisma.booking.findUnique({
       where: { id },
       include: {
-        customer: { select: { id: true, name: true, email: true, phone: true } },
-        stylist: { select: { id: true, name: true, user: { select: { name: true } } } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        stylist: { select: { id: true, user: { select: { name: true } } } },
         services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
         addOns: { include: { addOn: { select: { id: true, name: true, price: true } } } },
         payment: { select: { id: true, amount: true, status: true, method: true } },
@@ -58,12 +58,7 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const validated = z.object({
-      stylistId: z.string().cuid().optional(),
-      scheduledAt: z.string().datetime().optional(),
-      status: z.enum(['SCHEDULED', 'CONFIRMED', 'IN_PROGRESS', 'COMPLETED', 'CANCELLED', 'NO_SHOW']).optional(),
-      notes: z.string().optional(),
-    }).safeParse(await request.json())
+    const validated = updateAppointmentSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
@@ -79,12 +74,12 @@ export async function PUT(
       updateData.completedAt = new Date()
     }
 
-    const appointment = await prisma.appointment.update({
+    const appointment = await prisma.booking.update({
       where: { id },
       data: updateData,
       include: {
-        customer: { select: { id: true, name: true, email: true, phone: true } },
-        stylist: { select: { id: true, name: true, user: { select: { name: true } } } },
+        user: { select: { id: true, name: true, email: true, phone: true } },
+        stylist: { select: { id: true, user: { select: { name: true } } } },
         services: { include: { service: { select: { id: true, name: true, price: true, duration: true } } } },
         addOns: { include: { addOn: { select: { id: true, name: true, price: true } } } },
       },
@@ -109,7 +104,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    await prisma.appointment.delete({ where: { id } })
+    await prisma.booking.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {

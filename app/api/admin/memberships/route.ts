@@ -59,7 +59,7 @@ export async function POST(request: Request) {
       freeServices: z.number().int().min(0).default(0),
       benefits: z.array(z.string()).optional(),
       isActive: z.boolean().default(true),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })

@@ -21,14 +21,11 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')
     const search = request.nextUrl.searchParams.get('search')
-    const segment = request.nextUrl.searchParams.get('segment')
 
-    const where: any = {}
-    if (segment) where.segment = segment
+    const where: any = { role: 'CUSTOMER' }
     if (search) {
       where.OR = [
         { name: { contains: search, mode: 'insensitive' } },
@@ -40,20 +37,19 @@ export async function GET(request: NextRequest) {
     const skip = (page - 1) * limit
 
     const [customers, total] = await Promise.all([
-      prisma.customer.findMany({
+      prisma.user.findMany({
         where,
         include: {
-          user: { select: { id: true, email: true, name: true, role: true } },
           wallet: { select: { balance: true, totalEarned: true, totalRedeemed: true } },
-          membership: { select: { status: true, plan: { select: { name: true } } } },
-          _count: { select: { appointments: true, reviews: true } },
+          memberships: { select: { status: true, plan: { select: { name: true } } } },
+          _count: { select: { bookings: true, reviews: true } },
         },
         orderBy: { createdAt: 'desc' },
         skip,
         take: limit,
       }),
-      prisma.customer.count({ where }),
-    )
+      prisma.user.count({ where }),
+    ])
 
     return NextResponse.json({
       customers,
@@ -73,13 +69,11 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const validated = customerSchema.safeParse(await request.json())
+    const validated = customerSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
-
-    const { name, email, phone, dateOfBirth, gender, segment, referralCode } = validated.data
 
     const existingUser = await prisma.user.findUnique({ where: { email: validated.data.email } })
     if (existingUser) {
@@ -87,29 +81,16 @@ export async function POST(request: Request) {
     }
 
     const passwordHash = await hash('TempPass123!', 12)
-    const referralCode = generateReferralCode()
+    const referralCode = validated.data.referralCode || generateReferralCode()
 
     const user = await prisma.user.create({
       data: {
         name: validated.data.name,
         email: validated.data.email,
         phone: validated.data.phone,
-        passwordHash: await hash('TempPass123!', 12),
+        passwordHash,
         role: 'CUSTOMER',
         isVerified: true,
-        referralCode,
-      },
-    )
-
-    const customer = await prisma.customer.create({
-      data: {
-        userId: user.id,
-        name: validated.data.name,
-        email: validated.data.email,
-        phone: validated.data.phone,
-        dateOfBirth: validated.data.dateOfBirth ? new Date(validated.data.dateOfBirth) : null,
-        gender: validated.data.gender,
-        segment: validated.data.segment,
         referralCode,
       },
     })
@@ -118,7 +99,7 @@ export async function POST(request: Request) {
       data: { userId: user.id },
     })
 
-    return NextResponse.json(customer, { status: 201 })
+    return NextResponse.json(user, { status: 201 })
   } catch (error) {
     console.error('Error creating customer:', error)
     return NextResponse.json({ error: 'Failed to create customer' }, { status: 500 })
@@ -132,9 +113,4 @@ function generateReferralCode(): string {
     code += chars.charAt(Math.floor(Math.random() * chars.length))
   }
   return code
-}
-
-async function hash(password: string) {
-  const bcrypt = await import('bcryptjs')
-  return bcrypt.hash(password, 12)
 }

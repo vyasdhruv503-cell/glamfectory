@@ -2,12 +2,13 @@ import { NextRequest, NextResponse } from 'next/server'
 import { auth } from '@/lib/auth'
 import { prisma } from '@/lib/db/prisma'
 import { z } from 'zod'
+import { hash } from 'bcryptjs'
 
 const staffSchema = z.object({
   name: z.string().min(2),
   email: z.string().email(),
   phone: z.string().min(10),
-  role: z.enum(['STYLIST', 'MANAGER', 'RECEPTIONIST']),
+  role: z.enum(['STYLIST', 'ADMIN', 'CUSTOMER']).default('STYLIST'),
   specialization: z.array(z.string()).optional(),
   experience: z.number().int().min(0).default(0),
   commissionRate: z.number().min(0).max(100).default(0),
@@ -21,29 +22,28 @@ export async function GET(request: NextRequest) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const { searchParams } = new URL(request.url)
     const page = parseInt(request.nextUrl.searchParams.get('page') || '1')
     const limit = parseInt(request.nextUrl.searchParams.get('limit') || '20')
     const search = request.nextUrl.searchParams.get('search')
-    const role = request.nextUrl.searchParams.get('role')
     const isActive = request.nextUrl.searchParams.get('isActive')
 
     const where: any = {}
-    if (role) where.role = role
-    if (isActive !== null) where.isActive = isActive === 'true'
+    if (isActive !== null && isActive !== undefined) where.isActive = isActive === 'true'
     if (search) {
-      where.OR = [
-        { name: { contains: search, mode: 'insensitive' } },
-        { email: { contains: search, mode: 'insensitive' } },
-        { phone: { contains: search } },
-      ]
+      where.user = {
+        OR: [
+          { name: { contains: search, mode: 'insensitive' } },
+          { email: { contains: search, mode: 'insensitive' } },
+          { phone: { contains: search } },
+        ],
+      }
     }
 
     const [staff, total] = await Promise.all([
-      prisma.staff.findMany({
+      prisma.stylist.findMany({
         where,
         include: {
-          user: { select: { id: true, email: true, name: true, role: true, image: true } },
+          user: { select: { id: true, email: true, name: true, role: true, avatarUrl: true } },
           services: { include: { service: { select: { id: true, name: true } } } },
           availability: true,
           _count: { select: { bookings: true, reviews: true } },
@@ -52,12 +52,12 @@ export async function GET(request: NextRequest) {
         skip: (page - 1) * limit,
         take: limit,
       }),
-      prisma.staff.count({ where }),
-    )
+      prisma.stylist.count({ where }),
+    ])
 
     return NextResponse.json({
       staff,
-      pagination: { page: 1, limit: 20, total: staff.length, pages: 1 },
+      pagination: { page, limit, total, pages: Math.ceil(total / limit) },
     })
   } catch (error) {
     console.error('Error fetching staff:', error)
@@ -73,36 +73,27 @@ export async function POST(request: Request) {
     }
 
     const body = await request.json()
-    const validated = z.object({
-      name: z.string().min(2),
-      email: z.string().email(),
-      phone: z.string().min(10),
-      role: z.enum(['STYLIST', 'MANAGER', 'RECEPTIONIST']),
-      specialization: z.array(z.string()).optional(),
-      experience: z.number().int().min(0).default(0),
-      commissionRate: z.number().min(0).max(100).default(0),
-      isActive: z.boolean().default(true),
-    }).safeParse(await request.json())
+    const validated = staffSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
-    const passwordHash = await import('bcryptjs').then(m => m.hash('staff123', 12))
+    const passwordHash = await hash('staff123', 12)
 
     const user = await prisma.user.create({
       data: {
         name: validated.data.name,
         email: validated.data.email,
         phone: validated.data.phone,
-        passwordHash: await hash('staff123', 12),
+        passwordHash,
         role: validated.data.role,
         isVerified: true,
         referralCode: validated.data.name.toUpperCase().replace(/\s+/g, '') + '2024',
       },
     })
 
-    const staff = await prisma.staff.create({
+    const staff = await prisma.stylist.create({
       data: {
         userId: user.id,
         bio: '',
@@ -121,9 +112,4 @@ export async function POST(request: Request) {
     console.error('Error creating staff:', error)
     return NextResponse.json({ error: 'Failed to create staff member' }, { status: 500 })
   }
-}
-
-async function hash(password: string) {
-  const bcrypt = await import('bcryptjs')
-  return bcrypt.hash(password, 12)
 }

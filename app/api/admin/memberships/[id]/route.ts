@@ -67,7 +67,7 @@ export async function PUT(
       freeServices: z.number().int().min(0).optional(),
       benefits: z.array(z.string()).optional(),
       isActive: z.boolean().optional(),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })

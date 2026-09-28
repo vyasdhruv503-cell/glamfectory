@@ -33,8 +33,8 @@ export async function GET(
       include: {
         category: { select: { id: true, name: true, slug: true } },
         addOns: true,
-        stylists: { include: { stylist: { select: { id: true, name: true, user: { select: { name: true } } } } } },
-        _count: { select: { bookings: true, reviews: true } },
+        stylists: { include: { stylist: { select: { id: true, user: { select: { name: true } } } } } },
+        _count: { select: { bookings: true } },
       },
     })
 
@@ -72,7 +72,7 @@ export async function PUT(
       galleryUrls: z.array(z.string().url()).optional(),
       benefits: z.array(z.string()).optional(),
       isActive: z.boolean().optional(),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })

@@ -54,11 +54,12 @@ export async function PUT(
     const validated = z.object({
       title: z.string().min(2).optional(),
       description: z.string().optional(),
+      mediaUrl: z.string().min(1).optional(),
       mediaType: z.enum(['PHOTO', 'VIDEO', 'BEFORE_AFTER']).optional(),
       category: z.string().optional(),
       sortOrder: z.number().int().min(0).optional(),
       isActive: z.boolean().optional(),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })

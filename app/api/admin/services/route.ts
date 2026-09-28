@@ -14,7 +14,7 @@ const serviceSchema = z.object({
   galleryUrls: z.array(z.string().url()).optional(),
   benefits: z.array(z.string()).optional(),
   isActive: z.boolean().default(true),
-}
+})
 
 export async function GET(request: NextRequest) {
   try {
@@ -46,14 +46,14 @@ export async function GET(request: NextRequest) {
         include: {
           category: { select: { id: true, name: true, slug: true } },
           addOns: true,
-          stylists: { include: { stylist: { select: { id: true, name: true } } } },
+          stylists: { include: { stylist: { select: { id: true, user: { select: { name: true } } } } } },
         },
         orderBy: { createdAt: 'desc' },
         skip: (page - 1) * limit,
         take: limit,
       }),
       prisma.service.count({ where }),
-    )
+    ])
 
     return NextResponse.json({
       services,
@@ -75,6 +75,7 @@ export async function POST(request: Request) {
     const body = await request.json()
     const validated = z.object({
       name: z.string().min(2),
+      slug: z.string().optional(),
       categoryId: z.string().cuid(),
       description: z.string().optional(),
       price: z.number().min(0),
@@ -84,14 +85,19 @@ export async function POST(request: Request) {
       galleryUrls: z.array(z.string().url()).optional(),
       benefits: z.array(z.string()).optional(),
       isActive: z.boolean().default(true),
-    }).safeParse(await request.json())
+    }).safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
     }
 
+    const slug = validated.data.slug || validated.data.name.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '')
+
     const service = await prisma.service.create({
-      data: validated.data,
+      data: {
+        ...validated.data,
+        slug,
+      },
       include: { category: { select: { id: true, name: true, slug: true } } },
     })
 

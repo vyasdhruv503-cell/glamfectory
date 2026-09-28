@@ -25,14 +25,13 @@ export async function GET(
 
     const { id } = await params
 
-    const customer = await prisma.customer.findUnique({
+    const customer = await prisma.user.findUnique({
       where: { id },
       include: {
-        user: { select: { id: true, email: true, name: true, role: true, createdAt: true } },
         wallet: { select: { balance: true, totalEarned: true, totalRedeemed: true } },
         loyaltyTxns: { take: 10, orderBy: { createdAt: 'desc' } },
-        membership: { include: { plan: true } },
-        appointments: { take: 10, orderBy: { scheduledAt: 'desc' } },
+        memberships: { include: { plan: true } },
+        bookings: { take: 10, orderBy: { scheduledAt: 'desc' } },
         reviews: { take: 5, orderBy: { createdAt: 'desc' } },
         referralsAsReferrer: { take: 10 },
       },
@@ -61,15 +60,7 @@ export async function PUT(
 
     const { id } = await params
     const body = await request.json()
-    const validated = z.object({
-      name: z.string().min(2).optional(),
-      email: z.string().email().optional(),
-      phone: z.string().min(10).optional(),
-      dateOfBirth: z.string().optional(),
-      gender: z.enum(['MALE', 'FEMALE', 'OTHER']).optional(),
-      segment: z.enum(['REGULAR', 'VIP', 'AT_RISK', 'INACTIVE', 'NEW']).optional(),
-      referralCode: z.string().optional(),
-    }).safeParse(await request.json())
+    const validated = updateCustomerSchema.safeParse(body)
 
     if (!validated.success) {
       return NextResponse.json({ error: validated.error.errors[0].message }, { status: 400 })
@@ -79,18 +70,14 @@ export async function PUT(
     if (validated.data.name) updateData.name = validated.data.name
     if (validated.data.email) updateData.email = validated.data.email
     if (validated.data.phone) updateData.phone = validated.data.phone
-    if (validated.data.dateOfBirth !== undefined) updateData.dateOfBirth = validated.data.dateOfBirth ? new Date(validated.data.dateOfBirth) : null
-    if (validated.data.gender) updateData.gender = validated.data.gender
-    if (validated.data.segment) updateData.segment = validated.data.segment
     if (validated.data.referralCode !== undefined) updateData.referralCode = validated.data.referralCode
 
-    const customer = await prisma.customer.update({
+    const customer = await prisma.user.update({
       where: { id },
       data: updateData,
       include: {
-        user: { select: { id: true, email: true, name: true, role: true } },
         wallet: { select: { balance: true, totalEarned: true, totalRedeemed: true } },
-        membership: { include: { plan: true } },
+        memberships: { include: { plan: true } },
       },
     })
 
@@ -113,7 +100,7 @@ export async function DELETE(
 
     const { id } = await params
 
-    await prisma.customer.delete({ where: { id } })
+    await prisma.user.delete({ where: { id } })
 
     return NextResponse.json({ success: true })
   } catch (error) {
